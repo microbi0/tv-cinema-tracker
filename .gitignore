@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# mobile extras
+*.apk
+android/app/build
+android/.idea
+android/build
+.gradle/
+capacitor.config.json
+/assets/icon.png
+/assets/splash.png

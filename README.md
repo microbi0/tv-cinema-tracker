@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍿 TV & Cinema Tracker
 
-## Getting Started
+Uma aplicação mobile (Android/PWA) de alto desempenho para acompanhamento de filmes e séries, construída com **Next.js**, **Capacitor** e **TMDB API**. Focada em estética premium, animações fluidas a 120Hz e experiência de utilizador simplificada.
 
-First, run the development server:
+## ✨ Funcionalidades Principais
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **🚀 Performance Extrema**: Animações otimizadas com `Framer Motion` para uma fluidez de 120Hz nativa.
+- **📅 Calendário de Estreias**: Visualiza as próximas estreias das séries na tua watchlist de forma organizada por meses.
+- **🛡️ Watchlist Inteligente**: Gestão avançada que oculta séries que ainda não estrearam, mantendo o teu foco no que podes ver agora.
+- **🔍 Descoberta por Género**: Sistema de popups com carregamento ultra-rápido (cache incremental) para navegar por categorias.
+- **🎲 Sorteio Aleatório**: Não sabes o que ver? Usa o sistema de dados para escolher algo aleatório da tua watchlist.
+- **📱 Integração Nativa Android**:
+  - Suporte para **Themed Icons (Material You)**.
+  - Barra de estado (Status Bar) adaptada para modo escuro.
+  - Feedback tátil (Haptics) integrado em menus e botões.
+  - Navegação fluida com suporte para o botão "Back" nativo.
+- **🌗 Design Premium**: Interface Dark Mode com glassmorphism, skeletons de carregamento e tipografia moderna.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Stack Tecnológica
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Animações**: [Framer Motion](https://www.framer.com/motion/)
+- **Mobile**: [Capacitor](https://capacitorjs.com/)
+- **Ícones**: [Lucide React](https://lucide.dev/)
+- **API**: [TMDB (The Movie Database)](https://www.themoviedb.org/)
+- **Persistência**: LocalStorage com sistema de cache de 12h para chamadas de API.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Como Começar (Desenvolvimento)
 
-## Learn More
+1. **Clonar o Repositório**:
+   ```bash
+   git clone https://github.com/o-teu-utilizador/tv-cinema.git
+   cd tv-cinema
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Instalar Dependências**:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Executar em Desenvolvimento**:
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Compilar para Android**:
+   ```bash
+   npm run build
+   npx cap sync android
+   cd android && ./gradlew assembleDebug
+   ```
 
-## Deploy on Vercel
+## 📄 Notas de Versão (v1.0.0)
+- Ícone oficial de pipocas configurado com camada monocromática para temas dinâmicos do Android.
+- Sistema de cache inteligente para carregamento instantâneo de listas populares e géneros.
+- Correção de bugs de visibilidade na barra de estado e navegação gestual.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+Desenvolvido com ❤️ por [Sandro Garcia]

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TV Cinema</string>
+    <string name="title_activity_main">TV Cinema</string>
+    <string name="package_name">com.sandrogarcia.tvcinema</string>
+    <string name="custom_url_scheme">com.sandrogarcia.tvcinema</string>
+</resources>
