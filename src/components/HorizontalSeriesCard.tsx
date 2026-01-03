@@ -277,8 +277,8 @@ const HorizontalSeriesCard = memo(function HorizontalSeriesCard({
                             <div className="relative flex items-center justify-center h-12 w-12">
                                 {showCountdown ? (
                                     <div className="flex flex-col items-center justify-center h-14 w-14 text-white">
-                                        <span className="text-3xl font-black leading-none">{getCountdown(episodeDetails?.airDate).value}</span>
-                                        <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{getCountdown(episodeDetails?.airDate).label}</span>
+                                        <span className="text-3xl font-black leading-none">{getCountdown(episodeDetails?.airDate).value || '?'}</span>
+                                        <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{getCountdown(episodeDetails?.airDate).label || 'TBD'}</span>
                                     </div>
                                 ) : (
                                     <>

@@ -106,9 +106,9 @@ export default function MoviesPage() {
             const isFuture = relDate ? new Date(relDate).getTime() > now : false;
 
             if (view === 'favorites') return isFavorite(item.id, 'movie');
-            if (view === 'calendar') return isFuture;
+            if (view === 'calendar') return isFuture || !relDate;
             if (view === 'watched') return isMovieWatched(item.id);
-            if (view === 'watchlist') return watchlistIds.includes(item.id) && !isMovieWatched(item.id) && !isFuture;
+            if (view === 'watchlist') return watchlistIds.includes(item.id) && !isMovieWatched(item.id) && !isFuture && !!relDate;
             return false;
         });
     }, [displayItems, view, watchlistIds, watched, favorites]);
@@ -249,7 +249,12 @@ export default function MoviesPage() {
         const calendarItems = filteredItems.sort((a, b) => new Date(getPTReleaseDate(a) || 0).getTime() - new Date(getPTReleaseDate(b) || 0).getTime());
         return calendarItems.reduce((acc: Record<string, any[]>, item) => {
             const relDate = getPTReleaseDate(item);
-            if (!relDate) return acc;
+            if (!relDate) {
+                const key = 'Sem data de estreia';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(item);
+                return acc;
+            }
             const date = new Date(relDate);
             const monthName = date.toLocaleDateString('pt-PT', { month: 'long' });
             const monthKey = monthName.charAt(0).toUpperCase() + monthName.slice(1);
@@ -603,54 +608,59 @@ export default function MoviesPage() {
                                                     <p className="text-sm opacity-60 text-center max-w-xs">Não tens filmes com data de estreia anunciada na tua watchlist.</p>
                                                 </div>
                                             ) : (
-                                                Object.entries(upcomingByMonth).map(([month, items]) => (
-                                                    <section key={month} className="space-y-6">
-                                                        <h2 className="text-xl font-black text-white flex items-center gap-2 px-1 capitalize">
-                                                            {month}
-                                                        </h2>
-                                                        <div className="flex flex-col gap-3">
-                                                            {items.map((item: any) => {
-                                                                const countdown = getCountdown(getPTReleaseDate(item));
-                                                                return (
-                                                                    <motion.div
-                                                                        key={item.id}
-                                                                        initial={{ opacity: 0, y: 20 }}
-                                                                        whileInView={{ opacity: 1, y: 0 }}
-                                                                        viewport={{ once: true }}
-                                                                        onClick={() => window.location.href = `/movie-detail?id=${item.id}`}
-                                                                        className="relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-3xl p-3 active:scale-[0.98] transition-all overflow-hidden"
-                                                                    >
-                                                                        <div className="relative h-24 w-16 flex-shrink-0 rounded-xl overflow-hidden shadow-lg bg-neutral-800">
-                                                                            <img
-                                                                                src={getImageUrl(item.poster_path, 'medium')!}
-                                                                                alt={item.title}
-                                                                                className="h-full w-full object-cover"
-                                                                            />
-                                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                                                                        </div>
-
-                                                                        <div className="flex-1 min-w-0 pr-4">
-                                                                            <h3 className="text-lg font-bold text-white truncate mb-1">
-                                                                                {item.original_title || item.title}
-                                                                            </h3>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Calendar size={12} className="text-neutral-500" />
-                                                                                <span className="text-xs font-bold text-neutral-400">
-                                                                                    {new Date(getPTReleaseDate(item)).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}
-                                                                                </span>
+                                                Object.entries(upcomingByMonth)
+                                                    .sort(([a], [b]) => {
+                                                        if (a === 'Sem data de estreia') return 1;
+                                                        if (b === 'Sem data de estreia') return -1;
+                                                        return 0; // Keep relative month order
+                                                    })
+                                                    .map(([month, items]) => (
+                                                        <section key={month} className="space-y-6">
+                                                            <h2 className="text-xl font-black text-white flex items-center gap-2 px-1 capitalize">
+                                                                {month}
+                                                            </h2>
+                                                            <div className="flex flex-col gap-3">
+                                                                {items.map((item: any) => {
+                                                                    const ptDate = getPTReleaseDate(item);
+                                                                    const countdown = getCountdown(ptDate);
+                                                                    return (
+                                                                        <motion.div
+                                                                            key={item.id}
+                                                                            initial={{ opacity: 0, y: 20 }}
+                                                                            whileInView={{ opacity: 1, y: 0 }}
+                                                                            viewport={{ once: true }}
+                                                                            onClick={() => window.location.href = `/movie-detail?id=${item.id}`}
+                                                                            className="relative flex items-center gap-4 bg-white/5 border border-white/10 rounded-3xl p-3 active:scale-[0.98] transition-all overflow-hidden"
+                                                                        >
+                                                                            <div className="relative h-24 w-16 flex-shrink-0 rounded-xl overflow-hidden shadow-lg bg-neutral-800">
+                                                                                <img
+                                                                                    src={getImageUrl(item.poster_path, 'medium')!}
+                                                                                    alt={item.title}
+                                                                                    className="h-full w-full object-cover"
+                                                                                />
+                                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                                                             </div>
-                                                                        </div>
-
-                                                                        <div className="flex flex-col items-center justify-center h-14 w-14 text-white">
-                                                                            <span className="text-2xl font-black leading-none">{countdown.value}</span>
-                                                                            <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{countdown.label}</span>
-                                                                        </div>
-                                                                    </motion.div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </section>
-                                                ))
+                                                                            <div className="flex-1 min-w-0 pr-4">
+                                                                                <h3 className="text-lg font-bold text-white truncate mb-1">
+                                                                                    {item.original_title || item.title}
+                                                                                </h3>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <Calendar size={12} className="text-neutral-500" />
+                                                                                    <span className="text-xs font-bold text-neutral-400">
+                                                                                        {ptDate ? new Date(ptDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' }) : 'Data a anunciar'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex flex-col items-center justify-center h-14 w-14 text-white">
+                                                                                <span className="text-2xl font-black leading-none">{countdown.value || '?'}</span>
+                                                                                <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{countdown.label || 'TBD'}</span>
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </section>
+                                                    ))
                                             )}
                                         </div>
                                     ) : layout === 'date' ? (

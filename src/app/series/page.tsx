@@ -175,7 +175,7 @@ export default function SeriesPage() {
             const airDate = episodeDetails[item.id]?.airDate;
             const isFuture = airDate ? new Date(airDate).getTime() > now : false;
 
-            if (view === 'calendar') return isFuture;
+            if (view === 'calendar') return isFuture || !airDate;
             if (view === 'watchlist') {
                 const nextEp = getNextEpisode(item.id, item.seasons);
                 const hasPremiered = item.first_air_date && new Date(item.first_air_date).getTime() <= now;
@@ -195,7 +195,12 @@ export default function SeriesPage() {
 
         return upcoming.reduce((acc: Record<string, any[]>, item) => {
             const ad = episodeDetails[item.id]?.airDate;
-            if (!ad) return acc;
+            if (!ad) {
+                const key = 'Sem data de estreia';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(item);
+                return acc;
+            }
             const date = new Date(ad);
             const monthName = date.toLocaleDateString('pt-PT', { month: 'long' });
             const monthKey = monthName.charAt(0).toUpperCase() + monthName.slice(1);
@@ -548,29 +553,35 @@ export default function SeriesPage() {
                                             <p className="text-sm text-center max-w-[200px]">Não tens episódios com data de estreia anunciada.</p>
                                         </div>
                                     ) : (
-                                        Object.entries(upcomingByMonth).map(([month, items]) => (
-                                            <section key={month} className="space-y-6">
-                                                <h2 className="text-xl font-black text-white flex items-center gap-2 px-1 capitalize">
-                                                    {month}
-                                                </h2>
-                                                <div className="flex flex-col gap-3">
-                                                    {items.map((item: any) => (
-                                                        <HorizontalSeriesCard
-                                                            key={item.id}
-                                                            id={item.id}
-                                                            name={item.original_name || item.name}
-                                                            posterPath={item.poster_path}
-                                                            backdropPath={item.backdrop_path}
-                                                            nextEpisode={getNextEpisode(item.id, item.seasons)}
-                                                            episodeDetails={episodeDetails[item.id]}
-                                                            seasons={item.seasons}
-                                                            status={getSeriesStatus(item.id)}
-                                                            showCountdown={true}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </section>
-                                        ))
+                                        Object.entries(upcomingByMonth)
+                                            .sort(([a], [b]) => {
+                                                if (a === 'Sem data de estreia') return 1;
+                                                if (b === 'Sem data de estreia') return -1;
+                                                return 0;
+                                            })
+                                            .map(([month, items]) => (
+                                                <section key={month} className="space-y-6">
+                                                    <h2 className="text-xl font-black text-white flex items-center gap-2 px-1 capitalize">
+                                                        {month}
+                                                    </h2>
+                                                    <div className="flex flex-col gap-3">
+                                                        {items.map((item: any) => (
+                                                            <HorizontalSeriesCard
+                                                                key={item.id}
+                                                                id={item.id}
+                                                                name={item.original_name || item.name}
+                                                                posterPath={item.poster_path}
+                                                                backdropPath={item.backdrop_path}
+                                                                nextEpisode={getNextEpisode(item.id, item.seasons)}
+                                                                episodeDetails={episodeDetails[item.id]}
+                                                                seasons={item.seasons}
+                                                                status={getSeriesStatus(item.id)}
+                                                                showCountdown={true}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </section>
+                                            ))
                                     )}
                                 </div>
                             )}

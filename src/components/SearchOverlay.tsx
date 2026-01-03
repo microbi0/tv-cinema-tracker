@@ -130,7 +130,7 @@ export default function SearchOverlay() {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 30, stiffness: 350, mass: 0.8 }}
-                className="fixed inset-4 z-[150] bg-neutral-900 rounded-[40px] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col overflow-hidden"
+                className="fixed top-[70px] inset-x-4 bottom-4 z-[150] bg-neutral-900 rounded-[40px] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col overflow-hidden"
             >
                 <div className="flex-shrink-0 p-6 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
