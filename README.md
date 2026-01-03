@@ -1,60 +1,99 @@
 # 🍿 TV & Cinema Tracker
 
-Uma aplicação mobile (Android/PWA) de alto desempenho para acompanhamento de filmes e séries, construída com **Next.js**, **Capacitor** e **TMDB API**. Focada em estética premium, animações fluidas a 120Hz e experiência de utilizador simplificada.
+Uma aplicação mobile de alto desempenho desenvolvida com **Next.js**, **Capacitor** e **TMDB API**, focada em oferecer uma experiência premium para acompanhamento de filmes e séries.
 
-## ✨ Funcionalidades Principais
+![Versão](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=next.js)
+![Capacitor](https://img.shields.io/badge/Capacitor-8-119EFF?logo=capacitor)
 
-- **🚀 Performance Extrema**: Animações otimizadas com `Framer Motion` para uma fluidez de 120Hz nativa.
-- **📅 Calendário de Estreias**: Visualiza as próximas estreias das séries na tua watchlist de forma organizada por meses.
-- **🛡️ Watchlist Inteligente**: Gestão avançada que oculta séries que ainda não estrearam, mantendo o teu foco no que podes ver agora.
-- **🔍 Descoberta por Género**: Sistema de popups com carregamento ultra-rápido (cache incremental) para navegar por categorias.
-- **🎲 Sorteio Aleatório**: Não sabes o que ver? Usa o sistema de dados para escolher algo aleatório da tua watchlist.
-- **📱 Integração Nativa Android**:
-  - Suporte para **Themed Icons (Material You)**.
-  - Barra de estado (Status Bar) adaptada para modo escuro.
-  - Feedback tátil (Haptics) integrado em menus e botões.
-  - Navegação fluida com suporte para o botão "Back" nativo.
-- **🌗 Design Premium**: Interface Dark Mode com glassmorphism, skeletons de carregamento e tipografia moderna.
+## ✨ Funcionalidades
+
+### 🚀 Performance & UX
+- **Fluidez Nativa**: Animações otimizadas a 120Hz com `Framer Motion`.
+- **Experiência Premium**: Interface Dark Mode com Glassmorphism e micro-interações.
+- **Feedback Tátil**: Integração com Haptics nativo do Android em ações críticas.
+- **Skeleton Loading**: Carregamento visual progressivo para evitar flashes de conteúdo vazio.
+
+### 📅 Gestão de Conteúdo
+- **Watchlist Inteligente**: Filtra automaticamente séries que ainda não estrearam, mantendo o foco no que está disponível.
+- **Calendário de Estreia**: Visualização organizada por meses de todas as próximas estreias da sua lista.
+- **Sorteio Aleatório**: Sistema de "dados" para ajudar a decidir o que ver a seguir.
+- **Histórico Completo**: Acompanhamento detalhado de episódios e filmes vistos.
+
+### 🛠️ Integrações & Tecnologia
+- **TMDB API**: Integração completa para metadados, posters e informações de elenco.
+- **Cache Incremental**: Sistema de persistência local (12h) para reduzir chamadas de API e acelerar o carregamento.
+- **Android Native**: Suporte a *Themed Icons* (Material You) e barra de estado adaptativa.
 
 ## 🛠️ Stack Tecnológica
 
-- **Frontend**: [Next.js 15](https://nextjs.org/) (App Router)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Animações**: [Framer Motion](https://www.framer.com/motion/)
-- **Mobile**: [Capacitor](https://capacitorjs.com/)
-- **Ícones**: [Lucide React](https://lucide.dev/)
-- **API**: [TMDB (The Movie Database)](https://www.themoviedb.org/)
-- **Persistência**: LocalStorage com sistema de cache de 12h para chamadas de API.
+- **Frontend**: Next.js 15 (App Router) + React 19
+- **Estilização**: Tailwind CSS + Custom Design System
+- **Animações**: Framer Motion
+- **Mobile Foundation**: Capacitor 8
+- **Base de Dados**: TMDB API + Local Storage
+- **Gráficos**: Recharts
 
-## 🚀 Como Começar (Desenvolvimento)
+## 🚀 Como Executar
 
-1. **Clonar o Repositório**:
-   ```bash
-   git clone https://github.com/o-teu-utilizador/tv-cinema.git
-   cd tv-cinema
-   ```
+### Pré-requisitos
+- Node.js 18+
+- npm ou yarn
+- Android Studio (para builds mobile)
 
-2. **Instalar Dependências**:
-   ```bash
-   npm install
-   ```
+### Instalação
+1. Clone o repositório:
+```bash
+git clone https://github.com/[SEU-UTILIZADOR]/tv-cinema-tracker.git
+cd tv-cinema-tracker
+```
 
-3. **Executar em Desenvolvimento**:
-   ```bash
-   npm run dev
-   ```
+2. Instale as dependências:
+```bash
+npm install
+```
 
-4. **Compilar para Android**:
-   ```bash
-   npm run build
-   npx cap sync android
-   cd android && ./gradlew assembleDebug
-   ```
+3. Configure as variáveis de ambiente:
+Crie um arquivo `.env.local` e adicione sua chave da TMDB:
+```env
+NEXT_PUBLIC_TMDB_API_KEY=sua_chave_aqui
+```
 
-## 📄 Notas de Versão (v1.0.0)
-- Ícone oficial de pipocas configurado com camada monocromática para temas dinâmicos do Android.
-- Sistema de cache inteligente para carregamento instantâneo de listas populares e géneros.
-- Correção de bugs de visibilidade na barra de estado e navegação gestual.
+4. Inicie o servidor de desenvolvimento:
+```bash
+npm run dev
+```
+
+### Build Mobile (Android)
+```bash
+npm run build
+npx cap sync android
+cd android && ./gradlew assembleDebug
+```
+
+## 📁 Estrutura do Projeto
+
+```text
+src/
+├── app/          # Rotas e páginas (Next.js App Router)
+├── components/   # Componentes UI reutilizáveis
+├── hooks/        # Hooks customizados (Tracking, Cache, etc)
+├── lib/          # Utilitários e instâncias de API
+└── assets/       # Imagens e recursos estáticos
+```
+
+## 🤝 Contribuição
+
+1. Faça um Fork do projeto
+2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
+3. Faça o Commit das suas alterações (`git commit -m 'Add some AmazingFeature'`)
+4. Faça o Push para a Branch (`git push origin feature/AmazingFeature`)
+5. Abra un Pull Request
+
+## 📄 Licença
+
+Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
 
 ---
-Desenvolvido com ❤️ por [Sandro Garcia]
+Desenvolvido por **Sandro Garcia**
