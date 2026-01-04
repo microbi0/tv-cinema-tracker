@@ -118,7 +118,7 @@ const HorizontalSeriesCard = memo(function HorizontalSeriesCard({
         episodeDetails.e === nextEpisode.episode;
 
     const getCountdown = (dateStr?: string) => {
-        if (!dateStr) return { value: '', label: '' };
+        if (!dateStr) return { value: null, label: null };
         const diff = new Date(dateStr).getTime() - Date.now();
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
         if (days <= 0) return { value: '!', label: 'Hoje' };
@@ -223,7 +223,7 @@ const HorizontalSeriesCard = memo(function HorizontalSeriesCard({
                                         </span>
                                     </div>
                                 )}
-                                <h3 className="font-extrabold line-clamp-2 leading-tight mb-1 transition-colors duration-300 text-white text-lg">
+                                <h3 className="font-extrabold line-clamp-2 leading-tight mb-1 transition-colors duration-300 text-[#D6D6B1] text-xl">
                                     {name}
                                 </h3>
 
@@ -239,14 +239,14 @@ const HorizontalSeriesCard = memo(function HorizontalSeriesCard({
                                     </div>
                                 ) : isFinished ? (
                                     <span className="text-xs text-green-500 font-black uppercase tracking-wider">Concluída</span>
-                                ) : nextEpisode ? (
+                                ) : (
                                     <div className="relative">
                                         <p className="text-sm text-neutral-400 truncate overflow-visible h-5">
                                             {showCountdown ? (
                                                 <span className="text-[10px] font-normal text-white/80 uppercase tracking-wider">
-                                                    Temporada {nextEpisode.season}
+                                                    Temporada {(nextEpisode?.season) || (seasons?.length ? seasons.filter((s: any) => s.season_number > 0).length + 1 : 1)}
                                                 </span>
-                                            ) : (
+                                            ) : nextEpisode ? (
                                                 <>
                                                     <span className="font-bold mr-1.5 text-white">
                                                         T{nextEpisode.season.toString().padStart(2, '0')} E{nextEpisode.episode.toString().padStart(2, '0')}
@@ -264,11 +264,11 @@ const HorizontalSeriesCard = memo(function HorizontalSeriesCard({
                                                         </motion.span>
                                                     </AnimatePresence>
                                                 </>
+                                            ) : (
+                                                <span className="text-xs text-neutral-500">Sem episódios</span>
                                             )}
                                         </p>
                                     </div>
-                                ) : (
-                                    <span className="text-xs text-neutral-500">Sem episódios</span>
                                 )}
                             </div>
                         </div>
@@ -276,10 +276,12 @@ const HorizontalSeriesCard = memo(function HorizontalSeriesCard({
                         {!isSeriesCompletedAnimating && !isFinished && !status?.toLowerCase().trim().includes('stop') && (
                             <div className="relative flex items-center justify-center h-12 w-12">
                                 {showCountdown ? (
-                                    <div className="flex flex-col items-center justify-center h-14 w-14 text-white">
-                                        <span className="text-3xl font-black leading-none">{getCountdown(episodeDetails?.airDate).value || '?'}</span>
-                                        <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{getCountdown(episodeDetails?.airDate).label || 'TBD'}</span>
-                                    </div>
+                                    getCountdown(episodeDetails?.airDate).value ? (
+                                        <div className="flex flex-col items-center justify-center h-14 w-14" style={{ color: palette.hex }}>
+                                            <span className="text-3xl font-black leading-none">{getCountdown(episodeDetails?.airDate).value}</span>
+                                            <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{getCountdown(episodeDetails?.airDate).label}</span>
+                                        </div>
+                                    ) : null
                                 ) : (
                                     <>
                                         {/* Shockwave + Star Explosion (BEHIND BUTTON) */}

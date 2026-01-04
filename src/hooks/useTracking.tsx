@@ -73,8 +73,8 @@ interface TrackingContextType {
     getAnalystSummary: () => { vistas: any[], watchlistAtiva: any[], paraComecar: any[] };
     setCountry: (countryCode: string) => void;
     updateSeriesStatus: (id: number, status: string) => void;
-    notificationSettings: { movies: boolean, series: boolean };
-    updateNotificationSettings: (settings: { movies?: boolean, series?: boolean }) => void;
+    notificationSettings: { movies: boolean, series: boolean, trailers: boolean };
+    updateNotificationSettings: (settings: { movies?: boolean, series?: boolean, trailers?: boolean }) => void;
 }
 
 const TrackingContext = createContext<TrackingContextType | undefined>(undefined);
@@ -89,7 +89,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     const [lastWatched, setLastWatched] = useState<Record<string, number>>({});
     const [seriesStatuses, setSeriesStatuses] = useState<Record<number, string>>({});
     const [episodeDetails, setEpisodeDetailsState] = useState<Record<number, { name: string, airDate: string, s: number, e: number }>>({});
-    const [notificationSettings, setNotificationSettings] = useState({ movies: true, series: true });
+    const [notificationSettings, setNotificationSettings] = useState({ movies: true, series: true, trailers: true });
+    const [knownTrailers, setKnownTrailers] = useState<Record<number, string[]>>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -101,7 +102,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                 'cinetracker_favorites': setFavorites,
                 'cinetracker_dropped': setDropped,
                 'cinetracker_series_statuses': setSeriesStatuses,
-                'cinetracker_episode_details': setEpisodeDetailsState
+                'cinetracker_episode_details': setEpisodeDetailsState,
+                'cinetracker_known_trailers': setKnownTrailers
             };
             Object.entries(items).forEach(([key, setter]) => {
                 const val = localStorage.getItem(key);
@@ -225,16 +227,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         setSeriesStatuses(next);
         safeSetItem('cinetracker_series_statuses', JSON.stringify(next));
 
-        // If marking as stopped/dropped/ended, remove from actual watchlist array
-        if (BAN_STATUSES.includes(normalizedStatus)) {
-            setWatchlist(prev => {
-                const filtered = prev.filter(i => !(i.id === id && i.type === 'tv'));
-                if (filtered.length !== prev.length) {
-                    safeSetItem('cinetracker_watchlist', JSON.stringify(filtered));
-                }
-                return filtered;
-            });
-        }
+        // Status update only - removal from watchlist auto-filtering is handled at the UI layer
     };
 
     const setEpisodeDetails = (details: Record<number, any> | ((prev: Record<number, any>) => Record<number, any>)) => {
@@ -919,13 +912,90 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         window.location.reload();
     };
 
-    const updateNotificationSettings = (settings: { movies?: boolean, series?: boolean }) => {
+    const updateNotificationSettings = (settings: { movies?: boolean, series?: boolean, trailers?: boolean }) => {
         setNotificationSettings(prev => {
             const next = { ...prev, ...settings };
             safeSetItem('cinetracker_notification_settings', JSON.stringify(next));
             return next;
         });
     };
+
+    // Trailers Check Logic
+    useEffect(() => {
+        if (!notificationSettings.trailers || watchlist.length === 0) return;
+
+        const checkNewTrailers = async () => {
+            const newTrailersToNotify: { id: number, type: string, title: string, trailerKey: string }[] = [];
+            const updatedKnownTrailers = { ...knownTrailers };
+
+            // Only check a few at a time to avoid heavy API load
+            const itemsToCheck = watchlist.slice(0, 15);
+
+            for (const item of itemsToCheck) {
+                try {
+                    const videoData = await tmdb.getVideos(item.id, item.type);
+                    const trailers = videoData.results?.filter((v: any) => v.type === 'Trailer' && v.site === 'YouTube') || [];
+
+                    if (trailers.length > 0) {
+                        const known = updatedKnownTrailers[item.id] || [];
+                        const latestTrailer = trailers[0];
+
+                        if (!known.includes(latestTrailer.key)) {
+                            const details = await tmdb.getDetailsCached(item.id, item.type);
+                            newTrailersToNotify.push({
+                                id: item.id,
+                                type: item.type,
+                                title: details.title || details.name,
+                                trailerKey: latestTrailer.key
+                            });
+                            updatedKnownTrailers[item.id] = [...known, latestTrailer.key];
+                        }
+                    }
+                } catch (e) { }
+            }
+
+            if (newTrailersToNotify.length > 0) {
+                setKnownTrailers(updatedKnownTrailers);
+                safeSetItem('cinetracker_known_trailers', JSON.stringify(updatedKnownTrailers));
+
+                try {
+                    const { LocalNotifications } = await import('@capacitor/local-notifications');
+                    const perm = await LocalNotifications.checkPermissions();
+                    if (perm.display !== 'granted') await LocalNotifications.requestPermissions();
+
+                    await LocalNotifications.schedule({
+                        notifications: newTrailersToNotify.map((t, idx) => ({
+                            title: `Novo Trailer: ${t.title}`,
+                            body: `Vê agora o novo trailer de ${t.title}!`,
+                            id: Math.floor(Date.now() / 1000) + idx,
+                            extra: { url: `https://www.youtube.com/watch?v=${t.trailerKey}` },
+                            schedule: { at: new Date(Date.now() + 1000) }
+                        }))
+                    });
+                } catch (e) {
+                    console.error("LocalNotifications error:", e);
+                }
+            }
+        };
+
+        checkNewTrailers();
+        const interval = setInterval(checkNewTrailers, 2 * 60 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [notificationSettings.trailers, watchlist, knownTrailers]);
+
+    // Notification listener for clicks
+    useEffect(() => {
+        const setupListener = async () => {
+            try {
+                const { LocalNotifications } = await import('@capacitor/local-notifications');
+                await LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+                    const url = action.notification.extra?.url;
+                    if (url) window.open(url, '_blank');
+                });
+            } catch (e) { }
+        };
+        setupListener();
+    }, []);
 
     const contextValue = React.useMemo(() => ({
         watched, watchlist, favorites, dropped, lastWatched, seriesStatuses, episodeDetails, trackingLoading: loading,

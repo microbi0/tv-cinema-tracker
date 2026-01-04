@@ -20,6 +20,7 @@ export default function SeriesPage() {
     const [isShuffling, setIsShuffling] = useState(false);
     const [currentShuffleItem, setCurrentShuffleItem] = useState<any>(null);
 
+
     const handleRandomSeries = async () => {
         if (!watchlistCategories?.notStarted || watchlistCategories.notStarted.length === 0) return;
 
@@ -51,25 +52,33 @@ export default function SeriesPage() {
         }
 
         try {
-            const existingIds = new Set(displayItems.map(item => item.id));
-            const neededIds = ids.filter(id => !existingIds.has(id));
+            const existingIds = displayItems.map(item => item.id);
+            const neededIds = ids.filter(id => !existingIds.includes(id));
 
             if (neededIds.length === 0) {
+                // If we already have everything but might need updating (though cache handles this)
+                // we still set loading false
                 setInitialLoading(false);
                 return;
             }
 
             const BATCH_SIZE = 50;
+            let allNewResults: any[] = [];
+
             for (let i = 0; i < neededIds.length; i += BATCH_SIZE) {
                 const batch = neededIds.slice(i, i + BATCH_SIZE);
                 const results = await Promise.all(
                     batch.map(id => tmdb.getDetailsCached(id, 'tv').catch(() => null))
                 );
 
-                const validResults = results.filter((r: any) => r && r.id);
-                if (validResults.length > 0) {
+                const validBatch = results.filter((r: any) => r && r.id);
+                allNewResults = [...allNewResults, ...validBatch];
+
+                // Update every batch for better UX on first load, but only if we actually found something
+                if (validBatch.length > 0) {
                     setDisplayItems(prev => {
-                        const newOnes = validResults.filter(r => !prev.some(p => p.id === r.id));
+                        const newOnes = validBatch.filter(r => !prev.some(p => p.id === r.id));
+                        if (newOnes.length === 0) return prev;
                         return [...prev, ...newOnes];
                     });
                 }
@@ -82,28 +91,30 @@ export default function SeriesPage() {
         }
     };
 
-    const watchlistIds = getWatchlistByType('tv');
-    const trackedIds = getTrackedSeriesIds();
-    const favoriteIds = favorites.filter(f => f.type === 'tv').map(f => f.id);
+    const watchlistIds = useMemo(() => getWatchlistByType('tv'), [getWatchlistByType]);
+    const trackedIds = useMemo(() => getTrackedSeriesIds(), [getTrackedSeriesIds]);
+    const favoriteIds = useMemo(() => favorites.filter(f => f.type === 'tv').map(f => f.id), [favorites]);
     const allUniqueIds = useMemo(() => Array.from(new Set([...watchlistIds, ...trackedIds, ...favoriteIds])).sort((a, b) => b - a), [watchlistIds, trackedIds, favoriteIds]);
 
-    // Initial sync load from cache
+    // Initial sync load from cache - Critical for "Instant" feel
     useEffect(() => {
-        if (displayItems.length === 0 && allUniqueIds.length > 0) {
+        if (!trackingLoading && allUniqueIds.length > 0) {
             const cachedItems = allUniqueIds
                 .map(id => tmdb.getDetailsSync(id, 'tv'))
                 .filter(Boolean);
-            if (cachedItems.length > 0) {
-                setDisplayItems(cachedItems);
-                setInitialLoading(false);
-            }
-        }
-    }, [allUniqueIds]);
 
-    useEffect(() => {
-        if (!trackingLoading && allUniqueIds.length > 0) {
+            // Only update if we found cached items that aren't already displayed
+            if (cachedItems.length > 0) {
+                setDisplayItems(prev => {
+                    // If lengths match and IDs match, don't trigger re-render
+                    if (prev.length === cachedItems.length && prev.every((item, i) => item.id === cachedItems[i].id)) return prev;
+                    return cachedItems;
+                });
+            }
+            setInitialLoading(false);
             fetchSeries(allUniqueIds);
         } else if (!trackingLoading && allUniqueIds.length === 0) {
+            setDisplayItems([]);
             setInitialLoading(false);
         }
     }, [allUniqueIds, trackingLoading]);
@@ -149,23 +160,39 @@ export default function SeriesPage() {
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
     const SIX_MONTHS_MS = 182.5 * 24 * 60 * 60 * 1000;
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-    const STOPPED_STATUSES = ['stopped', 'stoped', 'dropped', 'abandoned', 'parada', 'descontinuada', 'abandonada'];
-    const ENDED_STATUSES = ['ended', 'canceled', 'cancelled'];
+    const STOPPED_STATUSES = ['stopped', 'stoped', 'dropped', 'abandoned', 'parada', 'descontinuada', 'abandonada', 'desistência'];
+    const ENDED_STATUSES = ['ended', 'canceled', 'cancelled', 'terminada', 'terminado', 'concluída', 'concluido'];
 
     const baseItems = useMemo(() => {
         return displayItems.filter(item => {
-            const status = (getSeriesStatus(item.id) || '').toLowerCase().trim();
-            const isStopped = STOPPED_STATUSES.includes(status);
-            const isEnded = ENDED_STATUSES.includes(status);
+            const userStatus = (getSeriesStatus(item.id) || '').toLowerCase().trim();
+            const tmdbStatus = (item.status || '').toLowerCase().trim();
+            const isStopped = STOPPED_STATUSES.includes(userStatus);
+            const isEndedUser = ENDED_STATUSES.includes(userStatus);
+            const isEndedTMDB = ENDED_STATUSES.includes(tmdbStatus);
+
+            const nextEp = getNextEpisode(item.id, item.seasons);
+            const isFinished = nextEp === null;
 
             if (view === 'watchlist') {
-                return watchlistIds.includes(item.id) && !isStopped && !isEnded;
+                const isInWatchlist = watchlistIds.includes(item.id);
+                const hasProgress = trackedIds.includes(item.id);
+                // Series should be in watchlist view if:
+                // 1. It's in the watchlist AND (is not fully finished OR the show is still ongoing)
+                // 2. OR it has progress and is NOT finished.
+                // AND it's not stopped by the user.
+                const shouldBeInWatchlist = (isInWatchlist || (hasProgress && !isFinished));
+                return shouldBeInWatchlist && !isStopped && !(isEndedUser && isFinished) && !(isEndedTMDB && isFinished);
             }
             if (view === 'watched') {
-                return (trackedIds.includes(item.id) || isStopped || isEnded) && (getNextEpisode(item.id, item.seasons) === null || isStopped || isEnded);
+                // Should be in watched list if:
+                // 1. Stopped by user
+                // 2. OR Ended (by user or TMDB) AND actually finished by user
+                // 3. OR Series is still ongoing but user marks it as ended
+                return isStopped || ((isEndedUser || isEndedTMDB) && isFinished) || (isEndedUser);
             }
             if (view === 'favorites') return isFavorite(item.id, 'tv');
-            if (view === 'calendar') return watchlistIds.includes(item.id) || trackedIds.includes(item.id);
+            if (view === 'calendar') return (watchlistIds.includes(item.id) || trackedIds.includes(item.id)) && !isStopped && !isEndedUser && !isEndedTMDB;
             return false;
         });
     }, [displayItems, view, watchlistIds, trackedIds, favorites, seriesStatuses]);
@@ -203,7 +230,9 @@ export default function SeriesPage() {
             }
             const date = new Date(ad);
             const monthName = date.toLocaleDateString('pt-PT', { month: 'long' });
-            const monthKey = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            const year = date.getFullYear();
+            const currentYear = new Date().getFullYear();
+            const monthKey = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)}${year !== currentYear ? ` ${year}` : ''}`;
             if (!acc[monthKey]) acc[monthKey] = [];
             acc[monthKey].push(item);
             return acc;
@@ -322,7 +351,8 @@ export default function SeriesPage() {
 
     return (
         <div className="h-auto max-w-full pb-24">
-            <div className="sticky top-0 z-50 bg-black/70 backdrop-blur-md px-5 pt-14 pb-4 border-b border-white/5">
+            <div className="sticky top-0 z-50 bg-black/70 backdrop-blur-md px-5 pt-14 pb-4 border-b border-white/5 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#D6D6B1]/35 via-[#D6D6B1]/5 to-transparent pointer-events-none" />
                 <header className="mb-4 flex items-center justify-between">
                     <h1 className="text-3xl font-black flex items-center gap-2">
                         <Tv size={24} className="text-white" />
@@ -358,7 +388,7 @@ export default function SeriesPage() {
                         {view === 'watchlist' && (
                             <motion.div
                                 layoutId="activeTabSeries"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -384,7 +414,7 @@ export default function SeriesPage() {
                         {view === 'calendar' && (
                             <motion.div
                                 layoutId="activeTabSeries"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -410,7 +440,7 @@ export default function SeriesPage() {
                         {view === 'watched' && (
                             <motion.div
                                 layoutId="activeTabSeries"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -436,7 +466,7 @@ export default function SeriesPage() {
                         {view === 'favorites' && (
                             <motion.div
                                 layoutId="activeTabSeries"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -533,8 +563,8 @@ export default function SeriesPage() {
                                                             isDropped={isDropped(item.id)}
                                                             status={getSeriesStatus(item.id)}
                                                             disableSwipe={true}
-                                                            showMarkFirstButton={true}
-                                                            onMarkFirst={() => toggleEpisode(item.id, 1, 1, item.seasons)}
+                                                            showMarkFirstButton={view === 'watchlist'}
+                                                            onMarkFirst={view === 'watchlist' ? () => toggleEpisode(item.id, 1, 1, item.seasons) : undefined}
                                                         />
                                                     ))}
                                                 </AnimatePresence>
@@ -561,7 +591,7 @@ export default function SeriesPage() {
                                             })
                                             .map(([month, items]) => (
                                                 <section key={month} className="space-y-6">
-                                                    <h2 className="text-xl font-black text-white flex items-center gap-2 px-1 capitalize">
+                                                    <h2 className="text-xl font-black text-[#D6D6B1] flex items-center gap-2 px-1 capitalize">
                                                         {month}
                                                     </h2>
                                                     <div className="flex flex-col gap-3">
@@ -588,10 +618,6 @@ export default function SeriesPage() {
 
                             {view === 'favorites' && (
                                 <div className="space-y-6">
-                                    <h2 className="text-xl font-black text-white px-1 flex items-center gap-2">
-                                        <Star size={20} fill="white" />
-                                        Séries Favoritas
-                                    </h2>
                                     <div className="grid grid-cols-3 gap-3">
                                         <AnimatePresence mode="popLayout" initial={false}>
                                             {filteredItems.map(item => (
@@ -623,7 +649,7 @@ export default function SeriesPage() {
                                     ) : (
                                         watchedByYear.map(([year, items]) => (
                                             <section key={year} className="space-y-6">
-                                                <h2 className="text-xl font-black text-white px-1 flex items-center gap-2">
+                                                <h2 className="text-xl font-black text-[#D6D6B1] px-1 flex items-center gap-2">
                                                     <History size={20} className="text-neutral-400" />
                                                     {year}
                                                 </h2>

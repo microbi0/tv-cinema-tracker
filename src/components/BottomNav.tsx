@@ -39,7 +39,7 @@ export default function BottomNav() {
                         <Link
                             href="/series"
                             className={`flex items-center gap-3 px-7 sm:px-8 py-4 sm:py-5 rounded-full transition-all duration-200 cubic-bezier(0.2, 0, 0, 1) ${isActive('/series')
-                                ? 'bg-white text-black font-black shadow-lg'
+                                ? 'bg-[#D6D6B1] text-black font-black shadow-lg'
                                 : 'text-neutral-400 hover:text-white font-bold'
                                 }`}
                         >
@@ -50,7 +50,7 @@ export default function BottomNav() {
                         <Link
                             href="/movies"
                             className={`flex items-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full transition-all duration-200 cubic-bezier(0.2, 0, 0, 1) ${isActive('/movies')
-                                ? 'bg-white text-black font-black shadow-lg'
+                                ? 'bg-[#D6D6B1] text-black font-black shadow-lg'
                                 : 'text-neutral-400 hover:text-white font-bold'
                                 }`}
                         >
@@ -63,7 +63,7 @@ export default function BottomNav() {
                     <button
                         onClick={toggleSearch}
                         className={`flex h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 items-center justify-center rounded-full shadow-2xl transition-all duration-200 cubic-bezier(0.2, 0, 0, 1) active:scale-95 border border-white/10 ${isSearchOpen
-                            ? 'bg-white text-black border-white'
+                            ? 'bg-[#D6D6B1] text-black border-[#D6D6B1]'
                             : 'glass-dark text-white'
                             }`}
                     >

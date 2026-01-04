@@ -9,7 +9,7 @@ import { Popcorn, Dices, X, Sparkles, CalendarDays, Clapperboard, CheckCircle2, 
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MoviesPage() {
-    const { getTrackedMovieIds, watched, watchlist, favorites, getWatchlistByType, isMovieWatched, getLastWatchedTime, isFavorite, toggleMovie } = useTracking();
+    const { getTrackedMovieIds, watched, watchlist, favorites, getWatchlistByType, isMovieWatched, getLastWatchedTime, isFavorite, toggleMovie, trackingLoading } = useTracking();
     const [displayItems, setDisplayItems] = useState<any[]>([]);
     const views = ['watchlist', 'calendar', 'watched', 'favorites'] as const;
     const [view, setView] = useState<typeof views[number]>('watchlist');
@@ -30,6 +30,7 @@ export default function MoviesPage() {
         return item.release_date;
     };
 
+
     const fetchData = async (ids: number[]) => {
         if (ids.length === 0) {
             setDisplayItems([]);
@@ -38,8 +39,8 @@ export default function MoviesPage() {
         }
 
         try {
-            const existingIds = new Set(displayItems.map(item => item.id));
-            const neededIds = ids.filter(id => !existingIds.has(id));
+            const existingIds = displayItems.map(item => item.id);
+            const neededIds = ids.filter(id => !existingIds.includes(id));
 
             if (neededIds.length === 0) {
                 setLoading(false);
@@ -53,15 +54,16 @@ export default function MoviesPage() {
                     batch.map(id => tmdb.getDetailsCached(id, 'movie').catch(() => null))
                 );
 
-                const validResults = batchResults.filter((r: any) => r && r.id);
-                if (validResults.length > 0) {
+                const validBatch = batchResults.filter((r: any) => r && r.id);
+                if (validBatch.length > 0) {
                     setDisplayItems(prev => {
-                        const newOnes = validResults.filter(r => !prev.some(p => p.id === r.id));
+                        const newOnes = validBatch.filter(r => !prev.some(p => p.id === r.id));
+                        if (newOnes.length === 0) return prev;
                         return [...prev, ...newOnes];
                     });
                 }
                 if (i === 0) setLoading(false);
-                setProgress(prev => prev + validResults.length);
+                setProgress(prev => prev + validBatch.length);
             }
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -70,27 +72,31 @@ export default function MoviesPage() {
         }
     };
 
-    const watchlistIds = getWatchlistByType('movie');
-    const trackedIds = getTrackedMovieIds();
-    const favoriteIds = favorites.filter(f => f.type === 'movie').map(f => f.id);
+    const watchlistIds = useMemo(() => getWatchlistByType('movie'), [getWatchlistByType]);
+    const trackedIds = useMemo(() => getTrackedMovieIds(), [getTrackedMovieIds]);
+    const favoriteIds = useMemo(() => favorites.filter(f => f.type === 'movie').map(f => f.id), [favorites]);
     const allUniqueIds = useMemo(() => Array.from(new Set([...watchlistIds, ...trackedIds, ...favoriteIds])).sort((a, b) => b - a), [watchlistIds, trackedIds, favoriteIds]);
 
-    // Initial sync load from cache to avoid "loading" flash
+    // Initial sync load from cache - Critical for "Instant" feel
     useEffect(() => {
-        if (displayItems.length === 0) {
+        if (!trackingLoading && allUniqueIds.length > 0) {
             const cachedItems = allUniqueIds
                 .map(id => tmdb.getDetailsSync(id, 'movie'))
                 .filter(Boolean);
-            if (cachedItems.length > 0) {
-                setDisplayItems(cachedItems);
-                setLoading(false);
-            }
-        }
-    }, [allUniqueIds]);
 
-    useEffect(() => {
-        fetchData(allUniqueIds);
-    }, [allUniqueIds]);
+            if (cachedItems.length > 0) {
+                setDisplayItems(prev => {
+                    if (prev.length === cachedItems.length && prev.every((item, i) => item.id === cachedItems[i].id)) return prev;
+                    return cachedItems;
+                });
+            }
+            setLoading(false);
+            fetchData(allUniqueIds);
+        } else if (!trackingLoading && allUniqueIds.length === 0) {
+            setDisplayItems([]);
+            setLoading(false);
+        }
+    }, [allUniqueIds, trackingLoading]);
 
     const now = Date.now();
     const threeWeeksAgo = now - 21 * 24 * 60 * 60 * 1000;
@@ -130,7 +136,7 @@ export default function MoviesPage() {
         if (noCinemaItems.length > 0) {
             sections.push({
                 name: 'No Cinema',
-                icon: <Popcorn size={24} className="text-white" />,
+                icon: <Popcorn size={24} className="text-[#D6D6B1]" />,
                 items: noCinemaItems
             });
             noCinemaItems.forEach(m => alreadyCategorized.add(m.id));
@@ -148,7 +154,7 @@ export default function MoviesPage() {
         if (recenteItems.length > 0) {
             sections.push({
                 name: 'Recentes',
-                icon: <Sparkles size={24} className="text-white" />,
+                icon: <Sparkles size={24} className="text-[#D6D6B1]" />,
                 items: recenteItems
             });
             recenteItems.forEach(m => alreadyCategorized.add(m.id));
@@ -184,7 +190,7 @@ export default function MoviesPage() {
                 const opacityClass = isCurrent ? 'opacity-100' : year === currentYear - 1 ? 'opacity-70' : year === currentYear - 2 ? 'opacity-50' : 'opacity-30';
                 sections.push({
                     name: isCurrent ? 'Este Ano' : year.toString(),
-                    icon: <CalendarDays size={24} className={`text-white ${opacityClass}`} />,
+                    icon: <CalendarDays size={24} className={`text-[#D6D6B1] ${opacityClass}`} />,
                     items: yearGroups[year].sort((a, b) => new Date(getPTReleaseDate(b)).getTime() - new Date(getPTReleaseDate(a)).getTime())
                 });
                 yearGroups[year].forEach(m => alreadyCategorized.add(m.id));
@@ -194,7 +200,7 @@ export default function MoviesPage() {
         if (classicItems.length > 0) {
             sections.push({
                 name: 'Clássicos',
-                icon: <History size={24} className="text-white opacity-20" />,
+                icon: <History size={24} className="text-[#D6D6B1] opacity-20" />,
                 items: classicItems.sort((a, b) => new Date(getPTReleaseDate(b)).getTime() - new Date(getPTReleaseDate(a)).getTime())
             });
             classicItems.forEach(m => alreadyCategorized.add(m.id));
@@ -212,7 +218,7 @@ export default function MoviesPage() {
         if (antigosItems.length > 0) {
             sections.push({
                 name: 'Antigos',
-                icon: <Ghost size={24} className="text-white opacity-10" />,
+                icon: <Ghost size={24} className="text-[#D6D6B1] opacity-10" />,
                 items: antigosItems
             });
         }
@@ -257,12 +263,13 @@ export default function MoviesPage() {
             }
             const date = new Date(relDate);
             const monthName = date.toLocaleDateString('pt-PT', { month: 'long' });
-            const monthKey = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            const year = date.getFullYear();
+            const monthKey = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)}${year !== currentYear ? ` ${year}` : ''}`;
             if (!acc[monthKey]) acc[monthKey] = [];
             acc[monthKey].push(item);
             return acc;
         }, {});
-    }, [filteredItems, view]);
+    }, [filteredItems, view, currentYear]);
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -339,7 +346,7 @@ export default function MoviesPage() {
 
 
     const getCountdown = (dateStr?: string) => {
-        if (!dateStr) return { value: '', label: '' };
+        if (!dateStr) return { value: null, label: null };
         const diff = new Date(dateStr).getTime() - Date.now();
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
         if (days <= 0) return { value: '!', label: 'Hoje' };
@@ -388,7 +395,8 @@ export default function MoviesPage() {
     return (
         <div className="relative h-auto max-w-full">
             {/* Sticky Header with Gaussian Blur */}
-            <div className="sticky top-0 z-50 bg-black/60 backdrop-blur-md px-5 pt-16 pb-4 border-b border-white/5">
+            <div className="sticky top-0 z-50 bg-black/60 backdrop-blur-md px-5 pt-16 pb-4 border-b border-white/5 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#D6D6B1]/35 via-[#D6D6B1]/5 to-transparent pointer-events-none" />
                 <header className="mb-4 flex items-center justify-between">
                     <h1 className="text-3xl font-black tracking-normal flex items-center gap-2">
                         <Clapperboard size={28} className="text-white" />
@@ -458,7 +466,7 @@ export default function MoviesPage() {
                         {view === 'watchlist' && (
                             <motion.div
                                 layoutId="movieTab"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -484,7 +492,7 @@ export default function MoviesPage() {
                         {view === 'calendar' && (
                             <motion.div
                                 layoutId="movieTab"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -510,7 +518,7 @@ export default function MoviesPage() {
                         {view === 'watched' && (
                             <motion.div
                                 layoutId="movieTab"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -536,7 +544,7 @@ export default function MoviesPage() {
                         {view === 'favorites' && (
                             <motion.div
                                 layoutId="movieTab"
-                                className="absolute inset-0 bg-white rounded-lg shadow-lg shadow-white/20 -z-10"
+                                className="absolute inset-0 bg-[#D6D6B1] rounded-lg shadow-lg shadow-[#D6D6B1]/20 -z-10"
                                 animate={tabIndicatorVariants.animate}
                                 transition={tabIndicatorVariants.transition}
                             />
@@ -580,14 +588,9 @@ export default function MoviesPage() {
                                 <div className="space-y-12 pb-20 pt-4">
                                     {view === 'favorites' ? (
                                         <div className="space-y-6">
-                                            <h2 className="text-xl font-black text-white px-1 flex items-center gap-2">
-                                                <Star size={20} fill="white" />
-                                                Filmes Favoritos
-                                            </h2>
                                             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                                                 {filteredItems.map((item: any) => (
                                                     <MediaCard
-                                                        key={item.id}
                                                         id={item.id}
                                                         title={item.original_title || item.title}
                                                         posterPath={item.poster_path}
@@ -616,7 +619,7 @@ export default function MoviesPage() {
                                                     })
                                                     .map(([month, items]) => (
                                                         <section key={month} className="space-y-6">
-                                                            <h2 className="text-xl font-black text-white flex items-center gap-2 px-1 capitalize">
+                                                            <h2 className="text-xl font-black text-[#D6D6B1] flex items-center gap-2 px-1 capitalize">
                                                                 {month}
                                                             </h2>
                                                             <div className="flex flex-col gap-3">
@@ -641,20 +644,22 @@ export default function MoviesPage() {
                                                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                                                             </div>
                                                                             <div className="flex-1 min-w-0 pr-4">
-                                                                                <h3 className="text-lg font-bold text-white truncate mb-1">
+                                                                                <h3 className="text-lg font-bold text-[#D6D6B1] truncate mb-1">
                                                                                     {item.original_title || item.title}
                                                                                 </h3>
                                                                                 <div className="flex items-center gap-2">
                                                                                     <Calendar size={12} className="text-neutral-500" />
                                                                                     <span className="text-xs font-bold text-neutral-400">
-                                                                                        {ptDate ? new Date(ptDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' }) : 'Data a anunciar'}
+                                                                                        {ptDate ? new Date(ptDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' }) : ''}
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
-                                                                            <div className="flex flex-col items-center justify-center h-14 w-14 text-white">
-                                                                                <span className="text-2xl font-black leading-none">{countdown.value || '?'}</span>
-                                                                                <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{countdown.label || 'TBD'}</span>
-                                                                            </div>
+                                                                            {countdown.value && (
+                                                                                <div className="flex flex-col items-center justify-center h-14 w-14" style={{ color: '#D6D6B1' }}>
+                                                                                    <span className="text-2xl font-black leading-none">{countdown.value}</span>
+                                                                                    <span className="text-[12px] font-black uppercase tracking-tighter opacity-60">{countdown.label}</span>
+                                                                                </div>
+                                                                            )}
                                                                         </motion.div>
                                                                     );
                                                                 })}
@@ -722,7 +727,6 @@ export default function MoviesPage() {
                                             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                                                 {sortedByHistory.map((item: any) => (
                                                     <MediaCard
-                                                        key={item.id}
                                                         id={item.id}
                                                         title={item.original_title || item.title}
                                                         posterPath={item.poster_path}

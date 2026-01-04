@@ -235,8 +235,8 @@ const MediaCard = memo(function MediaCard({ id, title, posterPath, rating, type,
                     </div>
 
                     <div className="px-1 py-2 min-h-[56px] flex flex-col justify-center">
-                        <h3 className="text-base font-black text-white line-clamp-2 leading-tight mb-0.5">{title}</h3>
-                        {year && <p className="text-sm font-bold uppercase text-neutral-400 tracking-wider">{year.split('-')[0]}</p>}
+                        <h3 className="text-lg font-black text-[#D6D6B1] line-clamp-2 leading-tight mb-0.5">{title}</h3>
+                        {year && <p className="text-sm font-bold uppercase text-neutral-400 tracking-wider transition-opacity">{year.split('-')[0]}</p>}
                     </div>
                 </Link>
             </motion.div>

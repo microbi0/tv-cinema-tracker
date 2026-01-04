@@ -36,17 +36,8 @@ const throttledFetch = (url: string, options: any): Promise<Response> => {
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function fetchTMDB(endpoint: string, params: Record<string, string> = {}) {
-    let apiKey = TMDB_API_KEY;
-    let accessToken = TMDB_ACCESS_TOKEN;
-
-    if (typeof window !== 'undefined') {
-        try {
-            const customKey = localStorage.getItem('cinetracker_api_key');
-            const customToken = localStorage.getItem('cinetracker_api_token');
-            if (customKey) apiKey = customKey;
-            if (customToken) accessToken = customToken;
-        } catch { }
-    }
+    const apiKey = TMDB_API_KEY;
+    const accessToken = TMDB_ACCESS_TOKEN;
 
     const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
     url.searchParams.append('api_key', apiKey);
@@ -184,7 +175,7 @@ export const tmdb = {
         fetchTMDB(`/search/${type}`, { query, page: page.toString() }),
     getDetails: (id: number, type: 'movie' | 'tv') =>
         fetchTMDB(`/${type}/${id}`, {
-            append_to_response: 'credits,videos,recommendations,watch/providers,images,translations,release_dates',
+            append_to_response: 'credits,videos,recommendations,watch/providers,images,translations,release_dates,reviews', include_video_language: 'en,null', include_image_language: 'en,null',
         }),
     // Optimized version with local persistence
     getDetailsCached: async (id: number, type: 'movie' | 'tv') => {
@@ -195,15 +186,28 @@ export const tmdb = {
             if (s) lang = JSON.parse(s).language || 'pt-PT';
         } catch { }
 
-        const key = `${type}_${id}_${lang}`;
+        const key = `${type}_${id}_${lang}_v4`;
         const cache = getCache();
         // Cache valid for 3 days
         if (cache[key] && (Date.now() - cache[key].timestamp < 3 * 24 * 60 * 60 * 1000)) {
             return cache[key].data;
         }
         const data = await fetchTMDB(`/${type}/${id}`, {
-            append_to_response: 'credits,videos,recommendations,watch/providers,images,translations,release_dates',
+            append_to_response: 'credits,videos,recommendations,watch/providers,images,translations,release_dates,reviews,external_ids', include_video_language: 'en,null', include_image_language: 'en,null',
         });
+
+        // If no reviews in the requested language, try to fetch them in English
+        if (data && (!data.reviews || data.reviews.results.length === 0)) {
+            try {
+                const enReviews = await fetchTMDB(`/${type}/${id}/reviews`, { language: 'en-US' });
+                if (enReviews && enReviews.results?.length > 0) {
+                    data.reviews = enReviews;
+                }
+            } catch (e) {
+                console.warn("Failed to fetch English reviews", e);
+            }
+        }
+
         if (data && data.id) {
             saveToCache(key, data);
             return data;
@@ -272,7 +276,7 @@ export const tmdb = {
             if (s) lang = JSON.parse(s).language || 'pt-PT';
         } catch { }
 
-        const key = `${type}_${id}_${lang}`;
+        const key = `${type}_${id}_${lang}_v4`;
         const cache = getCache();
         if (cache[key] && (Date.now() - cache[key].timestamp < 7 * 24 * 60 * 60 * 1000)) {
             return cache[key].data;
@@ -308,12 +312,14 @@ export const tmdb = {
             saveToCache(key, data);
         }
         return data;
-    }
+    },
+    getCollection: (id: number) => fetchTMDB(`/collection/${id}`),
 };
 
-export const getImageUrl = (path: string | null | undefined, size: 'small' | 'medium' | 'large' | 'original' = 'medium') => {
+export const getImageUrl = (path: string | null | undefined, size: 'logo' | 'small' | 'medium' | 'large' | 'original' = 'medium') => {
     if (!path || typeof path !== 'string') return null;
     const sizes = {
+        logo: 'w185',
         small: 'w342',
         medium: 'w500',
         large: 'w780',

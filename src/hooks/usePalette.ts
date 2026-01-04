@@ -30,100 +30,12 @@ function setCache(url: string, palette: { hex: string; rgb: string; contrast: st
     }
 }
 
-const DEFAULT_PALETTE = { hex: '#1e1e1e', rgb: '30, 30, 30', contrast: '#ffffff' };
+const FIXED_PALETTE = { hex: '#D6D6B1', rgb: '214, 214, 177', contrast: '#000000' };
 
 /**
  * Hook to extract the dominant color from an image.
- * Heavily optimized for mobile performance.
+ * Now hardcoded to a fixed accent color: #40BFC7
  */
 export function usePalette(imageUrl: string | null, skip: boolean = false) {
-    const [palette, setPalette] = useState(() => {
-        if (!imageUrl) return DEFAULT_PALETTE;
-        const cache = getCache();
-        return cache[imageUrl] || DEFAULT_PALETTE;
-    });
-
-    const lastUrl = useRef<string | null>(null);
-
-    useEffect(() => {
-        if (skip || !imageUrl || imageUrl === lastUrl.current) return;
-
-        const cache = getCache();
-        if (cache[imageUrl]) {
-            if (cache[imageUrl].hex !== palette.hex) {
-                setPalette(cache[imageUrl]);
-            }
-            lastUrl.current = imageUrl;
-            return;
-        }
-
-        lastUrl.current = imageUrl;
-
-        const runExtraction = () => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            // Use TMDB small image for extraction to save bandwidth and CPU
-            img.src = imageUrl;
-
-            img.onload = () => {
-                try {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true } as any) as CanvasRenderingContext2D | null;
-                    if (!ctx) return;
-
-                    canvas.width = 10;
-                    canvas.height = 10;
-                    ctx.drawImage(img, 0, 0, 10, 10);
-
-                    const imageData = ctx.getImageData(0, 0, 10, 10).data;
-                    let rTotal = 0, gTotal = 0, bTotal = 0;
-
-                    for (let i = 0; i < imageData.length; i += 4) {
-                        rTotal += imageData[i];
-                        gTotal += imageData[i + 1];
-                        bTotal += imageData[i + 2];
-                    }
-
-                    const count = 100;
-                    let dr = Math.round(rTotal / count);
-                    let dg = Math.round(gTotal / count);
-                    let db = Math.round(bTotal / count);
-
-                    // Boost saturation for better aesthetics
-                    const maxVal = Math.max(dr, dg, db);
-                    if (maxVal < 120 && maxVal > 0) {
-                        const factor = 130 / maxVal;
-                        dr = Math.min(255, Math.round(dr * factor));
-                        dg = Math.min(255, Math.round(dg * factor));
-                        db = Math.min(255, Math.round(db * factor));
-                    }
-
-                    const finalLum = (0.299 * dr + 0.587 * dg + 0.114 * db) / 255;
-                    const contrast = finalLum > 0.6 ? '#000000' : '#ffffff';
-
-                    const newPalette = {
-                        hex: `rgb(${dr}, ${dg}, ${db})`,
-                        rgb: `${dr}, ${dg}, ${db}`,
-                        contrast
-                    };
-
-                    setPalette(newPalette);
-                    setCache(imageUrl, newPalette);
-                } catch (e) { }
-            };
-        };
-
-        // Delay extraction longer to not fight with scrolling
-        const timer = setTimeout(() => {
-            if (globalThis.requestIdleCallback) {
-                globalThis.requestIdleCallback(runExtraction, { timeout: 2000 });
-            } else {
-                setTimeout(runExtraction, 500);
-            }
-        }, 1000);
-
-        return () => clearTimeout(timer);
-    }, [imageUrl, skip]);
-
-    return palette;
+    return FIXED_PALETTE;
 }

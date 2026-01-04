@@ -20,10 +20,6 @@ export default function SettingsPage() {
     const importRef = useRef<HTMLInputElement>(null);
     const zipImportRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
-    const [apiKey, setApiKey] = useState('');
-    const [apiToken, setApiToken] = useState('');
-    const [isApiSaved, setIsApiSaved] = useState(false);
-    const [showApiInfo, setShowApiInfo] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
 
 
@@ -211,21 +207,12 @@ export default function SettingsPage() {
                     const parsed = JSON.parse(settings);
                     if (parsed.region) setSelectedCountry(parsed.region);
                 }
-                setApiKey(localStorage.getItem('cinetracker_api_key') || '');
-                setApiToken(localStorage.getItem('cinetracker_api_token') || '');
             } catch (e) {
                 console.error("Failed to load settings or API keys from localStorage", e);
             }
         }
     }, []);
 
-    const saveApiKeys = () => {
-        localStorage.setItem('cinetracker_api_key', apiKey);
-        localStorage.setItem('cinetracker_api_token', apiToken);
-        setIsApiSaved(true);
-        setTimeout(() => setIsApiSaved(false), 3000);
-        // We might want to clear memory cache if API keys change, but let's keep it simple
-    };
 
 
     const getGenreIcon = (name: string) => {
@@ -362,7 +349,7 @@ export default function SettingsPage() {
                         <div className="bg-neutral-900/50 border border-white/5 p-4 rounded-2xl">
                             <div className="flex items-center gap-2 mb-2">
                                 <Clapperboard size={20} className="text-white" />
-                                <span className="text-sm font-bold uppercase tracking-wider text-blue-400">Filmes</span>
+                                <span className="text-sm font-bold uppercase tracking-wider text-[#D6D6B1]">Filmes</span>
                             </div>
                             <p className="text-4xl font-black text-white">{stats.movies}</p>
                             <div className="mt-2 space-y-0.5">
@@ -373,7 +360,7 @@ export default function SettingsPage() {
                         <div className="bg-neutral-900/50 border border-white/5 p-4 rounded-2xl">
                             <div className="flex items-center gap-2 mb-2">
                                 <Tv size={20} className="text-white" />
-                                <span className="text-sm font-bold uppercase tracking-wider text-purple-400">Séries</span>
+                                <span className="text-sm font-bold uppercase tracking-wider text-[#D6D6B1]">Séries</span>
                             </div>
                             <p className="text-4xl font-black text-white">{stats.series}</p>
                             <div className="mt-2 space-y-0.5">
@@ -386,7 +373,7 @@ export default function SettingsPage() {
                         <div className="bg-neutral-900/50 border border-white/5 p-4 rounded-2xl">
                             <div className="flex items-center gap-2 mb-2">
                                 <Clock size={20} className="text-white" />
-                                <span className="text-sm font-bold uppercase tracking-wider text-orange-400">FALTAM</span>
+                                <span className="text-sm font-bold uppercase tracking-wider text-[#D6D6B1]">FALTAM</span>
                             </div>
                             <p className="text-xl font-bold text-white leading-tight">{stats.extraMovieDuration}</p>
                             <p className="text-xs text-neutral-400 mt-2 font-medium">para acabar a lista de filmes</p>
@@ -395,7 +382,7 @@ export default function SettingsPage() {
                         <div className="bg-neutral-900/50 border border-white/5 p-4 rounded-2xl">
                             <div className="flex items-center gap-2 mb-2">
                                 <Clock size={20} className="text-white" />
-                                <span className="text-sm font-bold uppercase tracking-wider text-pink-400">FALTAM</span>
+                                <span className="text-sm font-bold uppercase tracking-wider text-[#D6D6B1]">FALTAM</span>
                             </div>
                             <p className="text-xl font-bold text-white leading-tight">{stats.extraSeriesDuration}</p>
                             <p className="text-xs text-neutral-400 mt-2 font-medium">para acabar a lista de séries</p>
@@ -403,7 +390,7 @@ export default function SettingsPage() {
                         <div className="bg-neutral-900/50 border border-white/5 p-4 rounded-2xl col-span-2">
                             <div className="flex items-center gap-2 mb-2">
                                 <Clock size={20} className="text-white" />
-                                <span className="text-sm font-bold uppercase tracking-wider text-green-400">Tempo Total</span>
+                                <span className="text-sm font-bold uppercase tracking-wider text-[#D6D6B1]">Tempo Total</span>
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-2xl font-black text-white leading-tight">{stats.totalDuration}</p>
@@ -542,7 +529,7 @@ export default function SettingsPage() {
                                                         <p className="text-xs text-neutral-500">Notificar quando um filme na watchlist estrear</p>
                                                     </div>
                                                 </div>
-                                                <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ${notificationSettings.movies ? 'bg-blue-600' : 'bg-neutral-800'}`}>
+                                                <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ${notificationSettings.movies ? 'bg-[#D6D6B1]' : 'bg-neutral-800'}`}>
                                                     <div className={`bg-white w-4 h-4 rounded-full transition-transform duration-200 ${notificationSettings.movies ? 'translate-x-6' : 'translate-x-0'}`} />
                                                 </div>
                                             </button>
@@ -558,64 +545,26 @@ export default function SettingsPage() {
                                                         <p className="text-xs text-neutral-500">Avisar no exato momento em que o episódio sair</p>
                                                     </div>
                                                 </div>
-                                                <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ${notificationSettings.series ? 'bg-purple-600' : 'bg-neutral-800'}`}>
+                                                <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ${notificationSettings.series ? 'bg-[#D6D6B1]' : 'bg-neutral-800'}`}>
                                                     <div className={`bg-white w-4 h-4 rounded-full transition-transform duration-200 ${notificationSettings.series ? 'translate-x-6' : 'translate-x-0'}`} />
                                                 </div>
                                             </button>
-                                        </div>
-                                    </div>
 
-                                    {/* API Configuration */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between px-1">
-                                            <h3 className="text-base font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
-                                                <Database size={16} /> Chaves de API
-                                            </h3>
                                             <button
-                                                onClick={() => setShowApiInfo(true)}
-                                                className="p-1.5 bg-white/5 rounded-full text-neutral-400 hover:text-white transition-colors"
+                                                onClick={() => updateNotificationSettings({ trailers: !notificationSettings.trailers })}
+                                                className="w-full bg-neutral-900/50 border border-white/5 p-4 rounded-2xl flex items-center justify-between hover:bg-neutral-800/50 transition-colors active:scale-98"
                                             >
-                                                <Info size={16} />
+                                                <div className="flex items-center gap-4">
+                                                    <Film size={22} className="text-white" />
+                                                    <div className="text-left">
+                                                        <p className="font-bold text-white text-base">Trailers de Filmes e Séries</p>
+                                                        <p className="text-xs text-neutral-500">Notificar quando for lançado um novo trailer</p>
+                                                    </div>
+                                                </div>
+                                                <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ${notificationSettings.trailers ? 'bg-[#D6D6B1]' : 'bg-neutral-800'}`}>
+                                                    <div className={`bg-white w-4 h-4 rounded-full transition-transform duration-200 ${notificationSettings.trailers ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                </div>
                                             </button>
-                                        </div>
-                                        <div className="bg-neutral-900/50 border border-white/5 p-5 rounded-2xl space-y-4">
-                                            <p className="text-xs text-neutral-400 leading-relaxed font-medium">
-                                                Introduz as tuas próprias chaves do **TMDB** para que a aplicação utilize a tua quota pessoal. Deixa em branco para usar a chave padrão.
-                                            </p>
-                                            <div className="space-y-3">
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[10px] uppercase font-black tracking-widest text-neutral-500 ml-1">API Key (v3)</label>
-                                                    <input
-                                                        type="text"
-                                                        value={apiKey}
-                                                        onChange={(e) => setApiKey(e.target.value)}
-                                                        placeholder="2670..."
-                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 outline-none focus:border-blue-500/50 transition-colors font-mono"
-                                                    />
-                                                </div>
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[10px] uppercase font-black tracking-widest text-neutral-500 ml-1">Access Token (v4 Auth)</label>
-                                                    <textarea
-                                                        value={apiToken}
-                                                        onChange={(e) => setApiToken(e.target.value)}
-                                                        placeholder="eyJh..."
-                                                        rows={3}
-                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 outline-none focus:border-purple-500/50 transition-colors font-mono resize-none"
-                                                    />
-                                                </div>
-                                                <button
-                                                    onClick={saveApiKeys}
-                                                    className={`w-full py-3.5 rounded-xl font-black text-sm transition-all active:scale-95 flex items-center justify-center gap-2 ${isApiSaved ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-neutral-200'
-                                                        }`}
-                                                >
-                                                    {isApiSaved ? (
-                                                        <>
-                                                            <CheckCircle2 size={18} strokeWidth={3} />
-                                                            Guardado
-                                                        </>
-                                                    ) : 'Guardar Configurações'}
-                                                </button>
-                                            </div>
                                         </div>
                                     </div>
 
@@ -726,76 +675,7 @@ export default function SettingsPage() {
                         )}
                     </AnimatePresence>
                 </div>
-
-
             </div>
-
-            {/* API Info Modal */}
-            <AnimatePresence>
-                {showApiInfo && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setShowApiInfo(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className="w-full max-w-md bg-neutral-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="p-6 space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-2xl">
-                                            <Info size={24} />
-                                        </div>
-                                        <h2 className="text-xl font-black text-white">Como obter as chaves?</h2>
-                                    </div>
-                                    <button onClick={() => setShowApiInfo(false)} className="p-2 bg-white/5 rounded-full text-neutral-400 hover:text-white">
-                                        <X size={20} />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="flex gap-4">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-xs font-black text-neutral-400">1</div>
-                                        <p className="text-sm text-neutral-300">Cria uma conta em <span className="text-blue-400 font-bold">themoviedb.org</span></p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-xs font-black text-neutral-400">2</div>
-                                        <p className="text-sm text-neutral-300">Vai às Definições da tua conta e clica em <span className="text-white font-bold">"API"</span> no menu lateral.</p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-xs font-black text-neutral-400">3</div>
-                                        <p className="text-sm text-neutral-300">Cria uma nova chave de API (Developer) preenchendo os dados básicos.</p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-xs font-black text-neutral-400">4</div>
-                                        <div className="space-y-2">
-                                            <p className="text-sm text-neutral-300">Copia a <span className="text-blue-400 font-bold">API Key (v3)</span> e o <span className="text-purple-400 font-bold">API Read Access Token (v4)</span> para os campos atrás.</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => window.open('https://www.themoviedb.org/settings/api', '_blank')}
-                                    className="w-full py-4 bg-white text-black rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl"
-                                >
-                                    Abrir TMDB <ExternalLink size={16} strokeWidth={3} />
-                                </button>
-
-                                <p className="text-[10px] text-center text-neutral-500 font-medium uppercase tracking-widest pt-2">
-                                    O Access Token é muito longo, certifica-te que copiaste tudo!
-                                </p>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
