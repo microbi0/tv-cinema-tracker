@@ -61,7 +61,7 @@ export default function DownloadPage() {
                             className="flex flex-col sm:flex-row gap-4"
                         >
                             <a
-                                href="/tv-cinema-tracker/download/tv-cinema.apk"
+                                href={process.env.NODE_ENV === 'production' ? "/tv-cinema-tracker/download/tv-cinema.apk" : "/download/tv-cinema.apk"}
                                 download
                                 className="inline-flex items-center justify-center gap-3 px-8 py-5 bg-[#D6D6B1] text-black rounded-2xl font-black text-lg hover:scale-105 active:scale-95 transition-all group"
                             >
@@ -120,7 +120,7 @@ export default function DownloadPage() {
                             {/* App Content */}
                             <div className="w-full h-full bg-black relative">
                                 <img
-                                    src="/tv-cinema-tracker/app-screenshot.png"
+                                    src={process.env.NODE_ENV === 'production' ? "/tv-cinema-tracker/app-screenshot.png" : "/app-screenshot.png"}
                                     alt="App Screenshot"
                                     className="w-full h-full object-cover"
                                 />
