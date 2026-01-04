@@ -117,19 +117,13 @@ export default function DownloadPage() {
                             {/* Phone Notch */}
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-neutral-800 rounded-b-2xl z-20" />
 
-                            {/* App Content Simulation */}
-                            <div className="w-full h-full bg-black p-4 space-y-4">
-                                <div className="pt-8 flex items-center justify-between px-2">
-                                    <div className="h-6 w-20 bg-white/10 rounded-lg animate-pulse" />
-                                    <div className="h-8 w-8 bg-[#D6D6B1] rounded-full shadow-lg shadow-[#D6D6B1]/20" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3 pb-4">
-                                    {[1, 2, 3, 4].map(i => (
-                                        <div key={i} className="aspect-[2/3] bg-neutral-900 rounded-xl border border-white/5 overflow-hidden animate-pulse">
-                                            <div className="w-full h-full bg-gradient-to-t from-black/80 to-transparent" />
-                                        </div>
-                                    ))}
-                                </div>
+                            {/* App Content */}
+                            <div className="w-full h-full bg-black relative">
+                                <img
+                                    src="/tv-cinema-tracker/app-screenshot.png"
+                                    alt="App Screenshot"
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
                         </div>
 
